@@ -257,6 +257,62 @@ function restartFunction() {
 
 
 
+//////////// savestate, persistence
+
+
+function saveState() {
+  const state = {
+    savedAt: Date.now(),
+    stats: {},
+    periodModeActive: periodModeActive,
+    tamponElapsed: tamponTimer.getElapsed(),
+    tamponActive: tamponTimer.isActive(),
+    mooncupElapsed: mooncupTimer.getElapsed(),
+    mooncupActive: mooncupTimer.isActive(),
+  };
+  statNames.forEach(function(stat) {
+    state.stats[stat] = window[`${stat}CurrentValue`];
+  });
+  localStorage.setItem("selfCareState", JSON.stringify(state));
+};
+
+// load state
+
+function loadState() {
+  const raw = localStorage.getItem("selfCareState");
+  if (!raw) return; // nothing saved yet, fresh start
+
+  const state = JSON.parse(raw);
+  const secondsElapsed = (Date.now() - state.savedAt) / 1000;
+
+  periodModeActive = state.periodModeActive;
+  if (periodModeActive) {
+    periodButton.innerText = "End Period Mode";
+    periodButton.style.backgroundColor = "#cc4477";
+    periodButton.onclick = notPeriodFunction;
+    periodExtras.style.display = "flex";
+  }
+
+  statNames.forEach(function(stat) {
+    const rate = getDecreaseRate(stat); // uses periodModeActive, already restored above
+    let value = state.stats[stat] - (rate * secondsElapsed);
+    if (value < 0) value = 0;
+    window[`${stat}CurrentValue`] = value;
+    window[`${stat}CountdownValue`] = getEffectiveTotalSeconds(stat) * (value / 100);
+    updateProgressBar(stat, value);
+    startTimer(stat); // resume ticking
+  });
+
+  startButton.innerText = "Restart";
+  startButton.onclick = restartFunction;
+
+  if (state.tamponActive) {
+    tamponTimer.resume(state.tamponElapsed + secondsElapsed);
+  }
+  if (state.mooncupActive) {
+    mooncupTimer.resume(state.mooncupElapsed + secondsElapsed);
+  }
+};
 
 
 
@@ -299,6 +355,7 @@ function startTimer(stat) {
     window[`${stat}CurrentValue`] = currentValue;
     window[`${stat}CountdownValue`] = getEffectiveTotalSeconds(stat) * (currentValue / 100);
     updateProgressBar(stat, currentValue);
+    saveState();
   }, commonInterval);
 };
 
@@ -643,11 +700,18 @@ function notPeriodFunction() {
 
 
 // period tampon timer and mooncup
-
 function createReminderTimer(button, label, durationSeconds) {
   let interval;
   let secondsElapsed = 0;
   let active = false;
+
+  function tick() {
+    secondsElapsed += 1;
+    if (secondsElapsed >= durationSeconds) {
+      button.innerText = "Replace now!";
+      button.style.backgroundColor = "red";
+    }
+  };
 
   function start() {
     active = true;
@@ -655,14 +719,21 @@ function createReminderTimer(button, label, durationSeconds) {
     button.innerText = `${label}: On`;
     button.style.backgroundColor = "#cc4477";
     button.onclick = stop;
+    interval = setInterval(tick, commonInterval);
+  };
 
-    interval = setInterval(function() {
-      secondsElapsed += 1;
-      if (secondsElapsed >= durationSeconds) {
-        button.innerText = "Replace now!";
-        button.style.backgroundColor = "red";
-      }
-    }, commonInterval);
+  function resume(elapsedSeconds) {
+    active = true;
+    secondsElapsed = elapsedSeconds;
+    button.onclick = stop;
+    if (secondsElapsed >= durationSeconds) {
+      button.innerText = "Replace now!";
+      button.style.backgroundColor = "red";
+    } else {
+      button.innerText = `${label}: On`;
+      button.style.backgroundColor = "#cc4477";
+    }
+    interval = setInterval(tick, commonInterval);
   };
 
   function stop() {
@@ -674,8 +745,19 @@ function createReminderTimer(button, label, durationSeconds) {
   };
 
   button.onclick = start;
-  return { stop };
+  return {
+    stop,
+    resume,
+    getElapsed: function() { return secondsElapsed; },
+    isActive: function() { return active; },
+  };
 };
+
+
+
+
+loadState();
+
 
 const tamponTimer = createReminderTimer(tamponButton, "Tampon Timer", 6 * 60 * 60);
 const mooncupTimer = createReminderTimer(mooncupButton, "Mooncup Timer", 12 * 60 * 60);
