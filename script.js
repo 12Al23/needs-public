@@ -201,6 +201,9 @@ function mainScreenFunction() {
   document.getElementById("popupDiv3").style.display = "none";
   document.getElementById("startButton").style.display = "block";
   document.getElementById("periodButton").style.display = "block";
+  if (periodModeActive) {
+    periodExtras.style.display = "flex";
+  }
   // Display the option buttons
   document.getElementById("options1").style.display = "flex";
     // Hide the sample buttons
@@ -434,6 +437,7 @@ function popupFunction(value) {
   activityButton.onclick = mainScreenFunction;
   document.getElementById("startButton").style.display = "none";
   document.getElementById("periodButton").style.display = "none";
+  periodExtras.style.display = "none";
    // Update the percentage text dynamically
 
    // Stop any leftover interval from a previously opened stat popup
@@ -518,6 +522,7 @@ function updateCountdownDisplay(stat) {
     activityButton.onclick = mainScreenFunction;
     document.getElementById("startButton").style.display = "none";
     document.getElementById("periodButton").style.display = "none";
+    periodExtras.style.display = "none";
     
     
 };
