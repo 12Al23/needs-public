@@ -756,8 +756,10 @@ function createReminderTimer(button, label, durationSeconds) {
 
 
 
-loadState();
-
 
 const tamponTimer = createReminderTimer(tamponButton, "Tampon Timer", 6 * 60 * 60);
 const mooncupTimer = createReminderTimer(mooncupButton, "Mooncup Timer", 12 * 60 * 60);
+
+
+
+loadState();
