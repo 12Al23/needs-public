@@ -249,6 +249,8 @@ function restartFunction() {
     window[`${stat}CountdownValue`] = statConfig[stat].totalSeconds;
     updateProgressBar(stat, 100);
   });
+
+  saveState();
 };
 
 
