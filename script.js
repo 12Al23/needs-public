@@ -264,6 +264,7 @@ function saveState() {
   const state = {
     savedAt: Date.now(),
     stats: {},
+    isRunning: startButton.innerText === "Restart", // true only if Start has been clicked
     periodModeActive: periodModeActive,
     tamponElapsed: tamponTimer.getElapsed(),
     tamponActive: tamponTimer.isActive(),
@@ -294,17 +295,25 @@ function loadState() {
   }
 
   statNames.forEach(function(stat) {
-    const rate = getDecreaseRate(stat); // uses periodModeActive, already restored above
-    let value = state.stats[stat] - (rate * secondsElapsed);
-    if (value < 0) value = 0;
+    let value = state.stats[stat];
+    if (state.isRunning) {
+      const rate = getDecreaseRate(stat);
+      value = value - (rate * secondsElapsed);
+      if (value < 0) value = 0;
+    }
     window[`${stat}CurrentValue`] = value;
     window[`${stat}CountdownValue`] = getEffectiveTotalSeconds(stat) * (value / 100);
     updateProgressBar(stat, value);
-    startTimer(stat); // resume ticking
   });
 
-  startButton.innerText = "Restart";
-  startButton.onclick = restartFunction;
+  if (state.isRunning) {
+    startButton.innerText = "Restart";
+    startButton.onclick = restartFunction;
+    statNames.forEach(function(stat) {
+      startTimer(stat);
+    });
+  }
+
 
   if (state.tamponActive) {
     tamponTimer.resume(state.tamponElapsed + secondsElapsed);
