@@ -249,6 +249,10 @@ function restartFunction() {
     window[`${stat}CountdownValue`] = statConfig[stat].totalSeconds;
     updateProgressBar(stat, 100);
   });
+  
+  if (periodModeActive) {
+    notPeriodFunction(); // also stops tampon/mooncup timers and hides periodExtras
+  }
 
   saveState();
 };
@@ -690,6 +694,8 @@ function socialOptionsDisplayFunction() {
 /*PERIOD BUTTON FUNCTIONS*/
 
 function periodButtonFunction() {
+  const isRunning = startButton.innerText === "Restart";
+  if (!isRunning) return; // can't enable Period Mode unless main timers are running
   /*hydration and food go down slightly faster. sleep goes down slightly faster, and fun. enable buff options and tampon timer */
   periodModeActive = true;
   periodButton.innerText = "End Period Mode";
