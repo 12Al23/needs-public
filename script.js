@@ -240,6 +240,13 @@ function startButtonFunction() {
 };
     
 function restartFunction() {
+  
+  const periodWarning = periodModeActive
+    ? " Period Mode will be turned off, and"
+    : "";
+  const confirmed = confirm(`Are you sure you want to restart?${periodWarning} all stat bars will be reset to 100%.`);
+  if (!confirmed) return;
+  
   startButton.innerText = "Start";
   startButton.onclick = startButtonFunction;
 
